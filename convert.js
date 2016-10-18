@@ -1,6 +1,6 @@
 var aws = require('aws-sdk');
 
-module.exports = function convert(bucket, fileKey, context) {
+module.exports = function convert(bucket, fileKey) {
   var s3 = new aws.S3({ signatureVersion: 'v4' }),
       Transform = require('stream').Transform,
       uppercase = new Transform({decodeStrings: false}),
@@ -14,10 +14,13 @@ module.exports = function convert(bucket, fileKey, context) {
   }).createReadStream();
   stream.setEncoding('utf8');
   stream.pipe(uppercase);
-  s3.upload({
-    Bucket: bucket,
-    Key: fileKey.replace(/^in/, 'out'),
-    Body: uppercase,
-    ACL: 'private'
-  }, context.done);
+
+  return new Promise((resolve, reject) => {
+	  s3.upload({
+	    Bucket: bucket,
+	    Key: fileKey.replace(/^in/, 'out'),
+	    Body: uppercase,
+	    ACL: 'private'
+	  }, (err, data) => err ? reject(err) : resolve(data));
+  })
 }

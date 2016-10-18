@@ -7,9 +7,10 @@ exports.handler = function (event, context) {
     if (eventRecord.eventSource === 'aws:s3' && eventRecord.s3) {
       convert(
         eventRecord.s3.bucket.name,
-        eventRecord.s3.object.key,
-        context
-      );
+        eventRecord.s3.object.key
+      )
+      .then(context.succeed)
+      .catch(context.fail)
     } else {
       context.fail('unsupported event source');
     }
