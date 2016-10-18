@@ -1,7 +1,7 @@
 var aws = require('aws-sdk');
 var assert = require('assert')
 
-var bucketName = "claudia-uppercase-test"
+var bucketName = "claudia-uppercase-kata-crifei93"
 var inputFileName = "inputfile.txt"
 var outputFileName = "outputfile.txt"
 
@@ -28,7 +28,6 @@ function deleteS3Object(bucket, key) {
   var s3 = new aws.S3({ signatureVersion: 'v4' })
 
   return new Promise((resolve, reject) => {
-    console.log('-- delete s3 object', bucket, key)
     s3.deleteObject({
       Bucket: bucket,
       Key: key,
@@ -39,7 +38,6 @@ function deleteS3Object(bucket, key) {
 function putS3Object(bucket, key, body) {
   var s3 = new aws.S3({ signatureVersion: 'v4' })
   return new Promise((resolve, reject) => {
-    console.log('-- put s3 object', bucket, key)
     s3.putObject({
       Bucket: bucket,
       Key: key,
@@ -52,7 +50,6 @@ function readS3Object(bucket, key) {
   var s3 = new aws.S3({ signatureVersion: 'v4' })
 
   return new Promise((resolve, reject) => {
-    console.log('-- read s3 object', bucket, key)
     var stream = s3.getObject({
       Bucket: bucket,
       Key: key
@@ -64,15 +61,14 @@ function waitUntilS3ObjectExists(bucket, key) {
   return new Promise((resolve, reject) => {
     var retries = 0
     var intervalId = setInterval(() => {
-      console.log('-- waiting until s3 object exists', bucket, key)
+      if(retries > 2) {
+        clearInterval(intervalId)
+        reject(new Error(`file (${key}) not found in bucket (${bucket})`))
+      }
       readS3Object(bucket, key)
-      .then(resolve)
-      .catch(() => {
-        console.log('-- retries', retries)
-        if(retries > 10) {
-          reject(new Error(`file (${key}) not found in bucket (${bucket})`))
-          clearInterval(intervalId)
-        }
+      .then((data) => {
+        clearInterval(intervalId)
+        resolve(data)
       })
       retries++
     }, 1000)
